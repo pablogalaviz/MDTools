@@ -19,6 +19,7 @@
 #include "parameters.h"
 #include "Modules/DynamicStructureFactor/mainDynamicStructureFactor.h"
 #include "Modules/PhononDOS/mainPhononDOS.h"
+#include "Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h"
 
 int main(const int ac, char *av[]) {
 
@@ -73,6 +74,13 @@ int main(const int ac, char *av[]) {
                 ("dynamic_structure_factor.val",
                  boost::program_options::value<double>(&dynamic_structure_factor.val)->default_value(1), "");
 
+        mdtools::axial_distribution_histogram_options_t axial_distribution_histogram;
+        boost::program_options::options_description axialDistributionHistogramOptions("Axial Distribution Histogram Options");
+        axialDistributionHistogramOptions.add_options()
+                ("axial_distribution_histogram.axis",
+                 boost::program_options::value<int>(&axial_distribution_histogram.axis)->default_value(0), "select the axis. Possible options [X,Y,Z,x,y,z]");
+
+
 
         boost::program_options::positional_options_description positional;
         positional.add("task", 1);
@@ -83,6 +91,7 @@ int main(const int ac, char *av[]) {
                 .add(simulationOptions)
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
+                .add(axialDistributionHistogramOptions)
                 ;
 
         boost::program_options::options_description configFileOptions;
@@ -90,6 +99,7 @@ int main(const int ac, char *av[]) {
                 .add(simulationOptions)
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
+                .add(axialDistributionHistogramOptions)
                 ;
 
         boost::program_options::variables_map vm;
@@ -141,7 +151,11 @@ int main(const int ac, char *av[]) {
                 break;
             case mdtools::task_t::DynamicStructureFactor :
                 dynamic_structure_factor.validate();
-                mdtools::mainDynamicStructureFactor(dynamic_structure_factor,io_options);
+                mdtools::mainDynamicStructureFactor(dynamic_structure_factor,io_options,simulation_options);
+                break;
+            case mdtools::task_t::AxialDistributionHistogram :
+                axial_distribution_histogram.validate();
+                mdtools::mainAxialDistributionHistogram(axial_distribution_histogram,io_options,simulation_options);
                 break;
             default:
                 mdtools::LOGGER.error << "Unknown task: " << task << std::endl;

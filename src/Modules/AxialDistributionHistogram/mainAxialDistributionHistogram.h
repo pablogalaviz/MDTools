@@ -15,18 +15,18 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //
-// Created by Pablo Galaviz on 8/4/2024.
+// Created by galavizp on 12/12/2024.
 //
 
-#ifndef MDTOOLS_MAINDYNAMICSTRUCTUREFACTOR_H
-#define MDTOOLS_MAINDYNAMICSTRUCTUREFACTOR_H
+#ifndef MDTOOLS_MAINAXIALDISTRIBUTIONHISTOGRAM_H
+#define MDTOOLS_MAINAXIALDISTRIBUTIONHISTOGRAM_H
 
 #include "parameters.h"
 
 namespace mdtools {
-    void mainDynamicStructureFactor(dynamic_structure_factor_options_t dynamic_structure_factor,const io_options_t& io_options, simulation_options_t simulation_options);
-}
 
+    void mainAxialDistributionHistogram(axial_distribution_histogram_options_t axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options);
 
+} // mdtools
 
-#endif //MDTOOLS_MAINDYNAMICSTRUCTUREFACTOR_H
+#endif //MDTOOLS_MAINAXIALDISTRIBUTIONHISTOGRAM_H

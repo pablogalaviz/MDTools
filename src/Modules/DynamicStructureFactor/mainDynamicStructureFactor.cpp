@@ -19,18 +19,15 @@
 //
 
 #include "mainDynamicStructureFactor.h"
-
-
 #include "logger.h"
 
 namespace mdtools {
 
-    void mainDynamicStructureFactor(dynamic_structure_factor_options_t dynamic_structure_factor,io_options_t io_options){
+    void mainDynamicStructureFactor(dynamic_structure_factor_options_t dynamic_structure_factor,
+                                    const io_options_t &io_options, simulation_options_t simulation_options) {
 
         LOGGER.info << "main Dynamic Structure Factor " << std::endl;
 
+
     }
-
 }
-
-

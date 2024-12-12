@@ -53,7 +53,7 @@ namespace mdtools {
 
     }
 
-    std::vector<atom> trajectoryReader::getLammpsTrajectory(double time_step) {
+    std::vector<atom_t> trajectoryReader::getLammpsTrajectory(double time_step) {
 
         std::string line;
 
@@ -142,9 +142,10 @@ namespace mdtools {
 
         }
 
-        std::vector<atom> atom_trajectory = std::vector<atom>(trajectory[0].number_of_atoms);
+        std::vector<atom_t> atom_trajectory = std::vector<atom_t>(trajectory[0].number_of_atoms);
         for (int atom_id = 0; atom_id < atom_trajectory.size(); atom_id++) {
             atom_trajectory[atom_id].time_step = time_step;
+            atom_trajectory[atom_id].atom_type = trajectory[0].atom_type[atom_id];
             atom_trajectory[atom_id].position_x.resize(trajectory.size());
             atom_trajectory[atom_id].position_y.resize(trajectory.size());
             atom_trajectory[atom_id].position_z.resize(trajectory.size());
@@ -175,8 +176,8 @@ namespace mdtools {
 
     }
 
-    std::vector<atom> trajectoryReader::getXDATCARTrajectory(double time_step) {
-        return std::vector<atom>();
+    std::vector<atom_t> trajectoryReader::getXDATCARTrajectory(double time_step) {
+        return std::vector<atom_t>();
     }
 
 

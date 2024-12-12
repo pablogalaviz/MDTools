@@ -32,13 +32,14 @@ namespace mdtools {
 
     /// Defines an enumerator for the tasks
     enum class task_t : int {
-        PhononDOS = 1, DynamicStructureFactor
+        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram
     };
 
     /// Map a string argument to a task enumerator.
     __attribute__((unused)) static std::map<std::string, task_t> str2task{
             {"PhononDOS",     task_t::PhononDOS},
-            {"DynamicStructureFactor", task_t::DynamicStructureFactor}
+            {"DynamicStructureFactor", task_t::DynamicStructureFactor},
+            {"AxialDistributionHistogram", task_t::AxialDistributionHistogram}
     };
 
 
@@ -98,6 +99,21 @@ namespace mdtools {
 
     };
 
+    struct axial_distribution_histogram_options_t {
+
+        int axis=0;
+
+        void validate() const {
+
+            if (axis < 0 || axis > 2) {
+                std::throw_with_nested(
+                        std::runtime_error("axis should be 0,1 or 2"));
+            }
+
+
+        }
+
+    };
 
 }
 

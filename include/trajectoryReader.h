@@ -39,7 +39,7 @@ namespace mdtools {
         GZIP = 0b0001'0000 , FILE_TYPE = 0b0000'1111,
     };
 
-    enum axis_t : int {X = 0, Y = 1, Z = 3};
+    enum axis_t : int {X = 0, Y = 1, Z = 2};
 
     inline format_t file_format(std::string name) {
 
@@ -126,8 +126,9 @@ namespace mdtools {
 //        LOGGER.debug << abs(velocity).max() << std::endl;
     }
 
-    struct atom {
+    struct atom_t {
         double time_step=0;
+        int atom_type=0;
         std::valarray<double> position_x;
         std::valarray<double> position_y;
         std::valarray<double> position_z;
@@ -150,6 +151,7 @@ namespace mdtools {
             std::stringstream  result;
             result << "{";
             result << "\"time step\" : " << time_step << ",";
+            result << "\"atom_t type\" : " << atom_type << ",";
             result << "\"position x\" : [ ";
             for(auto item : position_x){result << item << ",";}
             result.seekp(-1, std::ios_base::end);
@@ -219,16 +221,16 @@ namespace mdtools {
         boost::iostreams::filtering_streambuf<boost::iostreams::input> input_buffer;
 
 
-        std::vector<atom> (trajectoryReader::*getTrajectory)(double time_step);
-        std::vector<atom> getLammpsTrajectory(double time_step);
-        std::vector<atom> getXDATCARTrajectory(double time_step);
+        std::vector<atom_t> (trajectoryReader::*getTrajectory)(double time_step);
+        std::vector<atom_t> getLammpsTrajectory(double time_step);
+        std::vector<atom_t> getXDATCARTrajectory(double time_step);
 
     public:
         explicit trajectoryReader(const std::string& file_name);
 
         virtual ~trajectoryReader();
 
-        inline std::vector<atom> get(double time_step) {return (this->*getTrajectory)(time_step);}
+        inline std::vector<atom_t> get(double time_step) {return (this->*getTrajectory)(time_step);}
 
     };
 

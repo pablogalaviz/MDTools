@@ -37,6 +37,8 @@ add_executable(MDTools src/main.cpp
         src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.h
         src/trajectoryReader.cpp
         include/trajectoryReader.h
+        src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.cpp
+        src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h
 )
 
 target_link_libraries(MDTools
