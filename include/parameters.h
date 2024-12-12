@@ -42,6 +42,20 @@ namespace mdtools {
             {"AxialDistributionHistogram", task_t::AxialDistributionHistogram}
     };
 
+    /// Defines an enumerator for the axis
+    enum class axis_t : int {
+        X = 0, Y, Z
+    };
+
+    /// Map a string argument to a task enumerator.
+    __attribute__((unused)) static std::map<std::string, axis_t> str2axis{
+            {"X",     axis_t::X},
+            {"x", axis_t::X},
+            {"Y", axis_t::Y},
+            {"y", axis_t::Y},
+            {"Z", axis_t::Z},
+            {"z", axis_t::Z},
+    };
 
     struct io_options_t {
 
@@ -101,11 +115,11 @@ namespace mdtools {
 
     struct axial_distribution_histogram_options_t {
 
-        int axis=0;
+        std::string axis="x";
 
         void validate() const {
 
-            if (axis < 0 || axis > 2) {
+            if (str2axis.find(axis) == str2axis.end()) {
                 std::throw_with_nested(
                         std::runtime_error("axis should be 0,1 or 2"));
             }

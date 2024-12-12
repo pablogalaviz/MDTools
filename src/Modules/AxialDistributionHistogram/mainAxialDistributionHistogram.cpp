@@ -39,11 +39,13 @@ namespace mdtools {
         for (auto &atom: trajectory) {
             if(atom.atom_type!=4){continue;}
             for (int i = 0; i < n; i++) {
+                auto cx = 0.5*(atom.lattice_origin_x[i] + atom.lattice_a[i]);
                 auto cy = 0.5*(atom.lattice_origin_y[i] + atom.lattice_b[i]);
                 auto cz = 0.5*(atom.lattice_origin_z[i] + atom.lattice_c[i]);
+                auto x = atom.position_x[i] - cx;
                 auto y = atom.position_y[i] - cy;
                 auto z = atom.position_z[i] - cz;
-                auto r = sqrt(y*y+z*z);
+                auto r = sqrt(x*x+y*y+z*z);
                 histogram1(r);
             }
         }

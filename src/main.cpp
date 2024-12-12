@@ -78,7 +78,7 @@ int main(const int ac, char *av[]) {
         boost::program_options::options_description axialDistributionHistogramOptions("Axial Distribution Histogram Options");
         axialDistributionHistogramOptions.add_options()
                 ("axial_distribution_histogram.axis",
-                 boost::program_options::value<int>(&axial_distribution_histogram.axis)->default_value(0), "select the axis. Possible options [X,Y,Z,x,y,z]");
+                 boost::program_options::value<std::string>(&axial_distribution_histogram.axis)->default_value("x"), "select the axis. Possible options [X,Y,Z,x,y,z]");
 
 
 

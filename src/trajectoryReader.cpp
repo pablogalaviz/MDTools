@@ -21,7 +21,6 @@
 #include "trajectoryReader.h"
 #include <iostream>
 
-
 namespace mdtools {
         trajectoryReader::trajectoryReader(const std::string& file_name) {
 

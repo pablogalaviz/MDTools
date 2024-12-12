@@ -39,7 +39,7 @@ namespace mdtools {
         GZIP = 0b0001'0000 , FILE_TYPE = 0b0000'1111,
     };
 
-    enum axis_t : int {X = 0, Y = 1, Z = 2};
+    enum coordinates_t : int {X = 0, Y = 1, Z = 2};
 
     inline format_t file_format(std::string name) {
 
