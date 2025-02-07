@@ -25,7 +25,7 @@
 
 namespace mdtools {
 
-    void mainAxialDistributionHistogram(axial_distribution_histogram_options_t axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options);
+    void mainAxialDistributionHistogram(const axial_distribution_histogram_options_t& axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options);
 
 } // mdtools
 

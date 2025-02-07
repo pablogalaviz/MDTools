@@ -116,6 +116,9 @@ namespace mdtools {
     struct axial_distribution_histogram_options_t {
 
         std::string axis="x";
+        double start=0;
+        double stop=1;
+        int size=100;
 
         void validate() const {
 

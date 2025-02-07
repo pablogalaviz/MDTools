@@ -25,7 +25,7 @@
 
 namespace mdtools {
 
-    void mainAxialDistributionHistogram(axial_distribution_histogram_options_t axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options){
+    void mainAxialDistributionHistogram(const axial_distribution_histogram_options_t& axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options){
 
         auto trajectory = trajectoryReader(io_options.input_file).get(simulation_options.time_step);
 
@@ -33,30 +33,33 @@ namespace mdtools {
 
         auto n = trajectory[0].position_x.size();
 
-        using namespace boost::histogram;
-        auto histogram1 = make_histogram(axis::regular<>(100, 14, 27, "r"));
+        std::map<int, boost::histogram::histogram<std::tuple<boost::histogram::axis::regular<double>>>> histograms{};
 
+        auto axis = str2axis[axial_distribution_histogram.axis];
         for (auto &atom: trajectory) {
-            if(atom.atom_type!=4){continue;}
+            if(histograms.find(atom.atom_type) == histograms.end()){
+                histograms[atom.atom_type]=boost::histogram::make_histogram(boost::histogram::axis::regular<>(axial_distribution_histogram.size, axial_distribution_histogram.start, axial_distribution_histogram.stop, "r"));
+            }
             for (int i = 0; i < n; i++) {
                 auto cx = 0.5*(atom.lattice_origin_x[i] + atom.lattice_a[i]);
                 auto cy = 0.5*(atom.lattice_origin_y[i] + atom.lattice_b[i]);
                 auto cz = 0.5*(atom.lattice_origin_z[i] + atom.lattice_c[i]);
-                auto x = atom.position_x[i] - cx;
-                auto y = atom.position_y[i] - cy;
-                auto z = atom.position_z[i] - cz;
+                auto x = axis == axis_t::X ? 0 : atom.position_x[i] - cx;
+                auto y = axis == axis_t::Y ? 0 : atom.position_y[i] - cy;
+                auto z = axis == axis_t::Z ? 0 : atom.position_z[i] - cz;
                 auto r = sqrt(x*x+y*y+z*z);
-                histogram1(r);
+                histograms[atom.atom_type](r);
             }
         }
 
-        std::ofstream file;
-        file.open(io_options.output_path+"/hist_H2O.csv", std::ios_base::out );
-
-        for (auto&& x : indexed(histogram1, coverage::all)) {
-            file << 0.5*(x.bin().lower() + x.bin().upper()) << "," << *x << std::endl;
+        for(auto item : histograms) {
+            std::ofstream file;
+            file.open(io_options.output_path + "/hist_" + std::to_string(item.first) + ".csv", std::ios_base::out);
+            for (auto &&x: indexed(item.second, boost::histogram::coverage::all)) {
+                file << 0.5 * (x.bin().lower() + x.bin().upper()) << "," << *x << std::endl;
+            }
+            file.close();
         }
-
     }
 
 } // mdtools
