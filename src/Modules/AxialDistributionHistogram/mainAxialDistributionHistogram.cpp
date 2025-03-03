@@ -27,11 +27,15 @@ namespace mdtools {
 
     void mainAxialDistributionHistogram(const axial_distribution_histogram_options_t& axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options){
 
-        auto trajectory = trajectoryReader(io_options.input_file).get(simulation_options.time_step);
+        auto trajectory = trajectoryReader(io_options.trajectory_input_file,io_options.coordinates_input_file).get(simulation_options.time_step, simulation_options.start_iteration, simulation_options.end_iteration);
 
-        LOGGER.info << "reading done " << std::endl;
+        if(trajectory.empty()){
+            LOGGER.error << "AxialDistributionHistogram failed"<< std::endl;
+            return;
+        }
 
         auto n = trajectory[0].position_x.size();
+        LOGGER.info << "Reading done. Number of frames: "<< n << std::endl;
 
         std::map<int, boost::histogram::histogram<std::tuple<boost::histogram::axis::regular<double>>>> histograms{};
 

@@ -61,23 +61,33 @@ namespace mdtools {
 
         bool backup;
         std::string output_path;
-        std::string input_file;
+        std::string trajectory_input_file;
+        std::string coordinates_input_file;
         int progress = 0;
 
         void validate() const {
-            open_file(input_file,"Input file is missing");
+            open_file(trajectory_input_file, "Trajectory input file is missing");
         }
     };
 
     struct simulation_options_t {
 
         double time_step=0;
+        int start_iteration =0;
+        int end_iteration = -1;
 
-        void validate() const {
+        void validate() {
             if (time_step <= 0) {
                 std::throw_with_nested(
                         std::runtime_error("Negative or zero time_step"));
             }
+            if (start_iteration < 0) {
+                std::throw_with_nested(
+                        std::runtime_error("Negative or zero start iteration"));
+            }
+
+            if (end_iteration <= start_iteration){end_iteration = -1;}
+
         }
     };
 

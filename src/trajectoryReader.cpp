@@ -19,29 +19,57 @@
 //
 
 #include "trajectoryReader.h"
+#include "xdrfile/xdrfile.h"
+#include "xdrfile/xdrfile_trr.h"
 #include <iostream>
 
 namespace mdtools {
-        trajectoryReader::trajectoryReader(const std::string& file_name) {
+        trajectoryReader::trajectoryReader(const std::string& fn,const std::string& coordinates_file_name) {
 
-
+        file_name=fn;
         auto format_flag = file_format(file_name);
         auto format = static_cast<format_t>(format_flag & format_t::FILE_TYPE);
-
-        file.open(file_name, std::ios_base::in | std::ios_base::binary);
-        if (format_flag & GZIP) { input_buffer.push(boost::iostreams::gzip_decompressor()); }
-        input_buffer.push(file);
-        //Convert stream buffer to istream
-        input_stream = new std::istream(&input_buffer);
-        input_buffer.set_auto_close(false);
 
         switch (format) {
 
             case format_t::LAMMPS:
-            {getTrajectory = &trajectoryReader::getLammpsTrajectory;}
+            {
+                file.open(file_name, std::ios_base::in | std::ios_base::binary);
+                if (format_flag & GZIP) { input_buffer.push(boost::iostreams::gzip_decompressor()); }
+                input_buffer.push(file);
+                //Convert stream buffer to istream
+                input_stream = new std::istream(&input_buffer);
+                input_buffer.set_auto_close(false);
+                getTrajectory = &trajectoryReader::getLammpsTrajectory;
+            }
                 break;
             case format_t::XDATCAR:
             {getTrajectory = &trajectoryReader::getXDATCARTrajectory;}
+                break;
+            case format_t::XTC:
+            {
+                getTrajectory = &trajectoryReader::getXTCTrajectory;}
+                break;
+            case format_t::TRR:
+            {
+                auto format_flag = file_format(coordinates_file_name);
+                auto format = static_cast<format_t>(format_flag & format_t::FILE_TYPE);
+                if(format != format_t::GRO){
+                    LOGGER.error << "Required gro coordinates file" << std::endl;
+                    exit(EINVAL);
+                }
+
+                file.open(coordinates_file_name, std::ios_base::in);
+                if (!file) {
+                    LOGGER.error << "No such file or directory: " << coordinates_file_name << std::endl;
+                    exit(ENOENT);
+                }
+
+                input_buffer.push(file);
+                //Convert stream buffer to istream
+                input_stream = new std::istream(&input_buffer);
+                input_buffer.set_auto_close(false);
+                getTrajectory = &trajectoryReader::getTRRTrajectory;}
                 break;
 
             case format_t::UNKNOWN:
@@ -52,11 +80,12 @@ namespace mdtools {
 
     }
 
-    std::vector<atom_t> trajectoryReader::getLammpsTrajectory(double time_step) {
+    std::vector<atom_t> trajectoryReader::getLammpsTrajectory(double time_step, int start_iteration, int end_iteration) {
 
         std::string line;
 
         int number_of_atoms = 0;
+        int frame_count = 0;
         size_t box_coordinate = 0;
         state_t current_state = READING_NONE;
         std::vector<frame> trajectory;
@@ -68,11 +97,24 @@ namespace mdtools {
                 std::vector<std::string> fields;
                 boost::algorithm::split(fields, line, boost::is_any_of(":"));
                 if (fields[1].find("TIMESTEP") != std::string::npos) {
-                    current_state = READING_STEP;
-                    if (new_frame.time_step_id >= 0) {
-                        trajectory.push_back(new_frame);
-                        new_frame.reset();
+                    frame_count++;
+                    if(frame_count <= start_iteration){
+                        current_state = SKIP_FRAME;
                     }
+                    else
+                    {
+                        if(end_iteration > 0 && frame_count > end_iteration ){
+                            break;
+                        }
+                        current_state = READING_STEP;
+                        if (new_frame.time_step_id >= 0) {
+                            trajectory.push_back(new_frame);
+                            new_frame.reset();
+                        }
+                    }
+                    continue;
+                }
+                if (current_state == SKIP_FRAME){
                     continue;
                 }
                 if (fields[1].find("NUMBER OF ATOMS") != std::string::npos) {
@@ -89,6 +131,9 @@ namespace mdtools {
                 }
                 LOGGER.info << fields[1] << std::endl;
             } else {
+                if (current_state == SKIP_FRAME){
+                    continue;
+                }
                 if (current_state == READING_STEP) {
                     new_frame.time_step_id = stoi(line);
                     current_state = READING_NONE;
@@ -175,10 +220,125 @@ namespace mdtools {
 
     }
 
-    std::vector<atom_t> trajectoryReader::getXDATCARTrajectory(double time_step) {
+    std::vector<atom_t> trajectoryReader::getXDATCARTrajectory(double time_step, int start_iteration, int end_iteration) {
         return std::vector<atom_t>();
     }
 
+    std::vector<atom_t> trajectoryReader::getXTCTrajectory(double time_step, int start_iteration, int end_iteration) {
+        return std::vector<atom_t>();
+    }
+
+
+    std::string trajectoryReader::removeNumbers(const std::string& input) {
+        std::string result = input;
+        result.erase(std::remove_if(result.begin(), result.end(), [](char c) { return !std::isalpha(c); }), result.end());
+        return result;
+    }
+
+    std::vector<int> trajectoryReader::getAtomTypeFromGro(){
+        std::vector<int> result;
+        std::string line;
+        int count=0;
+        int atom_id=0;
+        unsigned long number_of_atoms=0;
+        std::map<std::string , int> map_atom_id;
+        while (std::getline(*input_stream, line)) {
+            if(count ==0){ count++; continue;}
+            if(count ==1){ number_of_atoms=stoi(line) ;count++; continue;}
+            std::vector<std::string> fields;
+            boost::algorithm::split(fields, line, boost::is_space(), boost::token_compress_on);
+            if(fields.size() < 5){ continue;}
+
+            std::string atom_key=removeNumbers(line);
+            if(map_atom_id.find(atom_key) == map_atom_id.end()){
+                map_atom_id[atom_key]=atom_id;
+                atom_id++;
+            }
+            result.push_back(map_atom_id[atom_key]);
+            count++;
+        }
+
+        if(result.size()!=number_of_atoms){
+            LOGGER.warning << "Inconsistent number of atoms " << std::endl;
+            LOGGER.warning << "Found:" << result.size() << " expecting:" << number_of_atoms << std::endl;
+            exit(-1);
+        }
+
+        return result;
+        }
+
+
+    std::vector<atom_t> trajectoryReader::getTRRTrajectory(double time_step, int start_iteration, int end_iteration) {
+
+         std::vector<int> atom_type = getAtomTypeFromGro();
+
+        std::vector<atom_t> atom_trajectory{};
+        int number_of_atoms;
+        unsigned long number_of_frames;
+        int64_t* offsets = nullptr;
+        // Get number of atoms in the trajectory
+        if (read_trr_header(file_name.c_str(), &number_of_atoms,&number_of_frames,&offsets) != exdrOK) {
+            LOGGER.error << "Failed to read number of atoms from"<< file_name.c_str() << std::endl;
+            return atom_trajectory;
+        }
+        // Allocate arrays for coordinates and velocities
+        std::vector<float> coordinates(3 * number_of_atoms), velocity(3 * number_of_atoms);
+        matrix box;
+        int step;
+        float time, lambda;
+        XDRFILE* xdr = xdrfile_open(file_name.c_str(), "r");
+        if (!xdr) {
+            LOGGER.error << "Cannot open TRR file" << std::endl;
+            return atom_trajectory;
+        }
+
+        atom_trajectory.resize(number_of_atoms);
+        for (auto & atom : atom_trajectory) {
+            atom.time_step = time_step;
+            atom.position_x.resize(number_of_frames);
+            atom.position_y.resize(number_of_frames);
+            atom.position_z.resize(number_of_frames);
+            atom.velocity_x.resize(number_of_frames);
+            atom.velocity_y.resize(number_of_frames);
+            atom.velocity_z.resize(number_of_frames);
+            atom.lattice_a.resize(number_of_frames);
+            atom.lattice_b.resize(number_of_frames);
+            atom.lattice_c.resize(number_of_frames);
+            atom.lattice_origin_x.resize(number_of_frames);
+            atom.lattice_origin_y.resize(number_of_frames);
+            atom.lattice_origin_z.resize(number_of_frames);
+            atom.time.resize(number_of_frames);
+        }
+        unsigned long frame_id=0;
+        int status;
+        uint8_t flag = 0;
+        while ((status = read_trr(xdr, number_of_atoms, &step, &time, &lambda,
+                                  box,                         // simulation box (3x3 matrix)
+                                  reinterpret_cast<rvec*>(coordinates.data()),  // coords array
+                                  reinterpret_cast<rvec*>(velocity.data()),    // velocities array
+                                  nullptr, &flag)) == exdrOK) {
+            for(int atom_id=0; atom_id < number_of_atoms; atom_id++){
+                atom_trajectory[atom_id].position_x[frame_id]=coordinates[3 * atom_id];
+                atom_trajectory[atom_id].position_y[frame_id]=coordinates[3 * atom_id + 1];
+                atom_trajectory[atom_id].position_z[frame_id]=coordinates[3 * atom_id + 2];
+                atom_trajectory[atom_id].velocity_x[frame_id]=velocity[3 * atom_id];
+                atom_trajectory[atom_id].velocity_y[frame_id]=velocity[3 * atom_id + 1];
+                atom_trajectory[atom_id].velocity_z[frame_id]=velocity[3 * atom_id + 2];
+                atom_trajectory[atom_id].lattice_origin_x[frame_id]=0;
+                atom_trajectory[atom_id].lattice_origin_y[frame_id]=0;
+                atom_trajectory[atom_id].lattice_origin_z[frame_id]=0;
+                atom_trajectory[atom_id].lattice_a[frame_id]=box[0][0];
+                atom_trajectory[atom_id].lattice_b[frame_id]=box[1][1];
+                atom_trajectory[atom_id].lattice_c[frame_id]=box[2][2];
+                atom_trajectory[atom_id].time=time;
+                atom_trajectory[atom_id].atom_type=atom_type[atom_id];
+            }
+            frame_id++;
+        }
+        xdrfile_close(xdr);
+
+        return atom_trajectory;
+    }
 
     trajectoryReader::~trajectoryReader() = default;
 } // mdtools

@@ -52,14 +52,18 @@ int main(const int ac, char *av[]) {
                 ("io.backup", boost::program_options::value<bool>(&io_options.backup)->default_value(true), "")
                 ("io.output",
                  boost::program_options::value<std::string>(&io_options.output_path)->default_value("output"), "")
-                ("io.input",
-                 boost::program_options::value<std::string>(&io_options.input_file)->default_value("dump.lammpstrj"), "");
+                ("io.trajectory_input",
+                 boost::program_options::value<std::string>(&io_options.trajectory_input_file)->default_value("dump.lammpstrj"), "Trajectory file in lammps or gromacs (trr,xtc) format")
+                ("io.coordinate_input",
+                 boost::program_options::value<std::string>(&io_options.coordinates_input_file)->default_value("input.gro"), "Coordinate file gro format (mandatory for gromacs trajectory)");
 
 
         mdtools::simulation_options_t simulation_options;
         boost::program_options::options_description simulationOptions("Simulation Options");
         simulationOptions.add_options()
-                ("simulation.time_step",boost::program_options::value<double>(&simulation_options.time_step)->default_value(1), "Simulation time step in fs");
+                ("simulation.time_step",boost::program_options::value<double>(&simulation_options.time_step)->default_value(1), "Simulation time step in fs")
+                ("simulation.start_iteration",boost::program_options::value<int>(&simulation_options.start_iteration)->default_value(0), "Read from start iteration")
+                ("simulation.end_iteration",boost::program_options::value<int>(&simulation_options.end_iteration)->default_value(0), "Read until end iteration. If end_iteration <= start_iteration read all.");
 
 
         mdtools::phonon_dos_options_t phonon_dos;
@@ -149,6 +153,7 @@ int main(const int ac, char *av[]) {
         mdtools::show_options(vm);
 
         io_options.validate();
+        simulation_options.validate();
         switch (mdtools::str2task.at(task)) {
 
             case mdtools::task_t::PhononDOS :

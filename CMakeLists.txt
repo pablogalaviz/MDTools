@@ -20,25 +20,30 @@ find_package(Boost COMPONENTS program_options iostreams filesystem system date_t
 find_package(GSL REQUIRED)
 include_directories("${GSL_INCLUDE_DIRS}")
 
-
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 
 add_executable(MDTools src/main.cpp
+        include/xdrfile/xdrfile.h
+        include/xdrfile/xdrfile_trr.h
+        include/xdrfile/xdrfile_xtc.h
         include/logger.h
         include/parameters.h
         include/io.h
+        include/trajectoryReader.h
         src/io.cpp
         src/Modules/PhononDOS/mainPhononDOS.cpp
         src/Modules/PhononDOS/mainPhononDOS.h
         src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.cpp
         src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.h
         src/trajectoryReader.cpp
-        include/trajectoryReader.h
         src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.cpp
         src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h
+        src/xdrfile/xdrfile.c
+        src/xdrfile/xdrfile_trr.c
+        src/xdrfile/xdrfile_xtc.c
 )
 
 target_link_libraries(MDTools

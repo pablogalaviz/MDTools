@@ -26,17 +26,17 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/regex.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
-
 #include "logger.h"
 
 namespace mdtools {
 
     // First 4 bits is file ID, the fifth bit is compression flag.
     enum format_t : int {
-        UNKNOWN = 0b0000'0000, LAMMPS = 0b0000'0001, XDATCAR = 0b0000'0010, LAMMPS_GZ = 0b0001'0001,
-        GZIP = 0b0001'0000 , FILE_TYPE = 0b0000'1111,
+        UNKNOWN = 0b0000'0000, LAMMPS = 0b0000'0001, XDATCAR = 0b0000'0010, TRR = 0b0000'0100, XTC = 0b0000'1000, GRO = 0b0001'0000, LAMMPS_GZ = 0b1000'0001,
+        GZIP = 0b1000'0000 , FILE_TYPE = 0b0111'1111,
     };
 
     enum coordinates_t : int {X = 0, Y = 1, Z = 2};
@@ -59,6 +59,15 @@ namespace mdtools {
                 if (compressed) { return format_t::LAMMPS_GZ; }
                 return format_t::LAMMPS;
             }
+            if (ext1 == "trr") {
+                return format_t::TRR;
+            }
+            if (ext1 == "xtc") {
+                return format_t::XTC;
+            }
+            if (ext1 == "gro") {
+                return format_t::GRO;
+            }
         }
         else{
             if(name_size ==1){
@@ -73,7 +82,7 @@ namespace mdtools {
     }
 
     enum state_t : int {
-        READING_NONE = 0, READING_STEP, READING_N_ATOMS, READING_BOX, READING_POSITION
+        READING_NONE = 0, READING_STEP, READING_N_ATOMS, READING_BOX, READING_POSITION, SKIP_FRAME, END_READING
     };
 
 
@@ -219,18 +228,23 @@ namespace mdtools {
         std::istream *input_stream;
         std::ifstream file;
         boost::iostreams::filtering_streambuf<boost::iostreams::input> input_buffer;
+        std::string file_name;
 
+        static std::string removeNumbers(const std::string& input);
+        std::vector<int> getAtomTypeFromGro();
 
-        std::vector<atom_t> (trajectoryReader::*getTrajectory)(double time_step);
-        std::vector<atom_t> getLammpsTrajectory(double time_step);
-        std::vector<atom_t> getXDATCARTrajectory(double time_step);
+        std::vector<atom_t> (trajectoryReader::*getTrajectory)(double time_step, int start_iteration, int end_iteration);
+        std::vector<atom_t> getLammpsTrajectory(double time_step, int start_iteration, int end_iteration);
+        std::vector<atom_t> getXDATCARTrajectory(double time_step, int start_iteration, int end_iteration);
+        std::vector<atom_t> getXTCTrajectory(double time_step, int start_iteration, int end_iteration);
+        std::vector<atom_t> getTRRTrajectory(double time_step, int start_iteration, int end_iteration);
 
     public:
-        explicit trajectoryReader(const std::string& file_name);
+        explicit trajectoryReader(const std::string& file_name,const std::string& coordinates_file_name="");
 
         virtual ~trajectoryReader();
 
-        inline std::vector<atom_t> get(double time_step) {return (this->*getTrajectory)(time_step);}
+        inline std::vector<atom_t> get(double time_step, int start_iteration, int end_iteration) {return (this->*getTrajectory)(time_step,start_iteration,end_iteration);}
 
     };
 

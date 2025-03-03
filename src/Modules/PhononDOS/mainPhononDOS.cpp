@@ -33,7 +33,7 @@ namespace mdtools {
 
         LOGGER.info << "main Phonon DOS" << std::endl;
 
-        auto trajectory=trajectoryReader(io_options.input_file).get(simulation_options.time_step);
+        auto trajectory=trajectoryReader(io_options.trajectory_input_file).get(simulation_options.time_step, simulation_options.start_iteration, simulation_options.end_iteration);
 
         std::valarray<double> vaf = std::valarray<double>(0.0,trajectory[0].velocity_x.size());
         std::valarray<double> norm = std::valarray<double>(0.0,trajectory[0].velocity_x.size());
