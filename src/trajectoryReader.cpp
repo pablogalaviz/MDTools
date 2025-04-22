@@ -214,6 +214,7 @@ namespace mdtools {
 
             }
             atom_trajectory[atom_id].calculate_velocity();
+            atom_trajectory[atom_id].calculate_means();
         }
 
         return atom_trajectory;
@@ -279,8 +280,18 @@ namespace mdtools {
         // Get number of atoms in the trajectory
         if (read_trr_header(file_name.c_str(), &number_of_atoms,&number_of_frames,&offsets) != exdrOK) {
             LOGGER.error << "Failed to read number of atoms from"<< file_name.c_str() << std::endl;
-            return atom_trajectory;
+            exit(-1);
         }
+
+        if (number_of_frames < start_iteration) {
+            LOGGER.error << "Number of frames is smaller than simulation.start_iteration"<< std::endl;
+            exit(-1);
+        }
+
+        if (number_of_frames < end_iteration) {
+            LOGGER.warning << "Number of frames is smaller than simulation.end_iteration"<< std::endl;
+        }
+
         // Allocate arrays for coordinates and velocities
         std::vector<float> coordinates(3 * number_of_atoms), velocity(3 * number_of_atoms);
         matrix box;
@@ -291,6 +302,8 @@ namespace mdtools {
             LOGGER.error << "Cannot open TRR file" << std::endl;
             return atom_trajectory;
         }
+
+        number_of_frames=std::min(number_of_frames,static_cast<unsigned long>(end_iteration-start_iteration));
 
         atom_trajectory.resize(number_of_atoms);
         for (auto & atom : atom_trajectory) {
@@ -316,25 +329,32 @@ namespace mdtools {
                                   box,                         // simulation box (3x3 matrix)
                                   reinterpret_cast<rvec*>(coordinates.data()),  // coords array
                                   reinterpret_cast<rvec*>(velocity.data()),    // velocities array
-                                  nullptr, &flag)) == exdrOK) {
-            for(int atom_id=0; atom_id < number_of_atoms; atom_id++){
-                atom_trajectory[atom_id].position_x[frame_id]=coordinates[3 * atom_id];
-                atom_trajectory[atom_id].position_y[frame_id]=coordinates[3 * atom_id + 1];
-                atom_trajectory[atom_id].position_z[frame_id]=coordinates[3 * atom_id + 2];
-                atom_trajectory[atom_id].velocity_x[frame_id]=velocity[3 * atom_id];
-                atom_trajectory[atom_id].velocity_y[frame_id]=velocity[3 * atom_id + 1];
-                atom_trajectory[atom_id].velocity_z[frame_id]=velocity[3 * atom_id + 2];
-                atom_trajectory[atom_id].lattice_origin_x[frame_id]=0;
-                atom_trajectory[atom_id].lattice_origin_y[frame_id]=0;
-                atom_trajectory[atom_id].lattice_origin_z[frame_id]=0;
-                atom_trajectory[atom_id].lattice_a[frame_id]=box[0][0];
-                atom_trajectory[atom_id].lattice_b[frame_id]=box[1][1];
-                atom_trajectory[atom_id].lattice_c[frame_id]=box[2][2];
-                atom_trajectory[atom_id].time=time;
-                atom_trajectory[atom_id].atom_type=atom_type[atom_id];
+                                  nullptr, &flag)) == exdrOK and frame_id < end_iteration) {
+            if(frame_id >= start_iteration){
+                for(int atom_id=0; atom_id < number_of_atoms; atom_id++){
+                    atom_trajectory[atom_id].position_x[frame_id-start_iteration]=coordinates[3 * atom_id];
+                    atom_trajectory[atom_id].position_y[frame_id-start_iteration]=coordinates[3 * atom_id + 1];
+                    atom_trajectory[atom_id].position_z[frame_id-start_iteration]=coordinates[3 * atom_id + 2];
+                    atom_trajectory[atom_id].velocity_x[frame_id-start_iteration]=velocity[3 * atom_id];
+                    atom_trajectory[atom_id].velocity_y[frame_id-start_iteration]=velocity[3 * atom_id + 1];
+                    atom_trajectory[atom_id].velocity_z[frame_id-start_iteration]=velocity[3 * atom_id + 2];
+                    atom_trajectory[atom_id].lattice_origin_x[frame_id-start_iteration]=0;
+                    atom_trajectory[atom_id].lattice_origin_y[frame_id-start_iteration]=0;
+                    atom_trajectory[atom_id].lattice_origin_z[frame_id-start_iteration]=0;
+                    atom_trajectory[atom_id].lattice_a[frame_id-start_iteration]=box[0][0];
+                    atom_trajectory[atom_id].lattice_b[frame_id-start_iteration]=box[1][1];
+                    atom_trajectory[atom_id].lattice_c[frame_id-start_iteration]=box[2][2];
+                    atom_trajectory[atom_id].time=time;
+                    atom_trajectory[atom_id].atom_type=atom_type[atom_id];
+                }
             }
             frame_id++;
         }
+
+        for(auto &atom : atom_trajectory){
+            atom.calculate_means();
+        }
+
         xdrfile_close(xdr);
 
         return atom_trajectory;

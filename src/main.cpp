@@ -20,6 +20,7 @@
 #include "Modules/DynamicStructureFactor/mainDynamicStructureFactor.h"
 #include "Modules/PhononDOS/mainPhononDOS.h"
 #include "Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h"
+#include "Modules/PairDistributionHistogram/mainPairDistributionHistogram.h"
 
 int main(const int ac, char *av[]) {
 
@@ -90,7 +91,15 @@ int main(const int ac, char *av[]) {
                 ("axial_distribution_histogram.size",
                  boost::program_options::value<int>(&axial_distribution_histogram.size)->default_value(100), "Histogram number of bins");
 
-
+        mdtools::pair_distribution_histogram_options_t pair_distribution_histogram;
+        boost::program_options::options_description pairDistributionHistogramOptions("Pair Distribution Histogram Options");
+        pairDistributionHistogramOptions.add_options()
+                ("pair_distribution_histogram.start",
+                 boost::program_options::value<double>(&pair_distribution_histogram.start)->default_value(0), "Histogram start from the axis")
+                ("pair_distribution_histogram.stop",
+                 boost::program_options::value<double>(&pair_distribution_histogram.stop)->default_value(1), "Histogram stop from the axis")
+                ("pair_distribution_histogram.size",
+                 boost::program_options::value<int>(&pair_distribution_histogram.size)->default_value(100), "Histogram number of bins");
 
         boost::program_options::positional_options_description positional;
         positional.add("task", 1);
@@ -102,6 +111,7 @@ int main(const int ac, char *av[]) {
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
                 .add(axialDistributionHistogramOptions)
+                .add(pairDistributionHistogramOptions)
                 ;
 
         boost::program_options::options_description configFileOptions;
@@ -110,6 +120,7 @@ int main(const int ac, char *av[]) {
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
                 .add(axialDistributionHistogramOptions)
+                .add(pairDistributionHistogramOptions)
                 ;
 
         boost::program_options::variables_map vm;
@@ -167,6 +178,10 @@ int main(const int ac, char *av[]) {
             case mdtools::task_t::AxialDistributionHistogram :
                 axial_distribution_histogram.validate();
                 mdtools::mainAxialDistributionHistogram(axial_distribution_histogram,io_options,simulation_options);
+                break;
+            case mdtools::task_t::PairDistributionHistogram :
+                pair_distribution_histogram.validate();
+                mdtools::mainPairDistributionHistogram(pair_distribution_histogram,io_options,simulation_options);
                 break;
             default:
                 mdtools::LOGGER.error << "Unknown task: " << task << std::endl;

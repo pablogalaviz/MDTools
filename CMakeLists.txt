@@ -8,6 +8,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
+find_package(OpenMP REQUIRED)
+
+if (OpenMP_CXX_FOUND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif ()
+if (OpenMP_C_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+endif ()
+
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #-- Boost library setup
@@ -41,12 +50,14 @@ add_executable(MDTools src/main.cpp
         src/trajectoryReader.cpp
         src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.cpp
         src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h
+        src/Modules/PairDistributionHistogram/mainPairDistributionHistogram.cpp
+        src/Modules/PairDistributionHistogram/mainPairDistributionHistogram.h
         src/xdrfile/xdrfile.c
         src/xdrfile/xdrfile_trr.c
         src/xdrfile/xdrfile_xtc.c
 )
 
-target_link_libraries(MDTools
+target_link_libraries(MDTools PUBLIC
         Boost::boost
         Boost::program_options
         Boost::iostreams
@@ -54,3 +65,7 @@ target_link_libraries(MDTools
         Boost::date_time
         GSL::gsl
 )
+
+if (OpenMP_CXX_FOUND OR OpenMP_C_FOUND)
+    target_link_libraries(MDTools PUBLIC OpenMP::OpenMP_CXX)
+endif ()

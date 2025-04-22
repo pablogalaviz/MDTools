@@ -32,14 +32,15 @@ namespace mdtools {
 
     /// Defines an enumerator for the tasks
     enum class task_t : int {
-        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram
+        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram, PairDistributionHistogram
     };
 
     /// Map a string argument to a task enumerator.
     __attribute__((unused)) static std::map<std::string, task_t> str2task{
             {"PhononDOS",     task_t::PhononDOS},
             {"DynamicStructureFactor", task_t::DynamicStructureFactor},
-            {"AxialDistributionHistogram", task_t::AxialDistributionHistogram}
+            {"AxialDistributionHistogram", task_t::AxialDistributionHistogram},
+            {"PairDistributionHistogram", task_t::PairDistributionHistogram}
     };
 
     /// Defines an enumerator for the axis
@@ -134,13 +135,48 @@ namespace mdtools {
 
             if (str2axis.find(axis) == str2axis.end()) {
                 std::throw_with_nested(
-                        std::runtime_error("axis should be 0,1 or 2"));
+                        std::runtime_error("axial_distribution_histogram.axis should be 0,1 or 2"));
+            }
+            if (start < 0) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.start should be zero or positive number"));
             }
 
+            if (stop < start) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.stop should be larger than start"));
+            }
+
+            if (size < 2) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.size should be larger than 2"));
+            }
 
         }
 
     };
+
+    struct pair_distribution_histogram_options_t {
+
+        double start=0;
+        double stop=1;
+        int size=100;
+
+        void validate() const {
+
+            if (start < 0) {
+                std::throw_with_nested(std::runtime_error("pair_distribution_histogram.start should be zero or positive number"));
+            }
+
+            if (stop < start) {
+                std::throw_with_nested(std::runtime_error("pair_distribution_histogram.stop should be larger than start"));
+            }
+
+            if (size < 2) {
+                std::throw_with_nested(std::runtime_error("pair_distribution_histogram.size should be larger than 2"));
+            }
+
+        }
+
+    };
+
 
 }
 

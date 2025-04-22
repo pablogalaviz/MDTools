@@ -142,9 +142,17 @@ namespace mdtools {
         std::valarray<double> position_y;
         std::valarray<double> position_z;
 
+        double mean_position_x;
+        double mean_position_y;
+        double mean_position_z;
+
         std::valarray<double> velocity_x;
         std::valarray<double> velocity_y;
         std::valarray<double> velocity_z;
+
+        double mean_velocity_x;
+        double mean_velocity_y;
+        double mean_velocity_z;
 
         std::valarray<double> time;
         std::valarray<double> lattice_a;
@@ -218,6 +226,20 @@ namespace mdtools {
             velocity_x *= lattice_a;
             velocity_y *= lattice_b;
             velocity_z *= lattice_c;
+
+        }
+
+        void calculate_means(){
+            auto number_of_frames=static_cast<double >(position_x.size());
+
+            mean_position_x = position_x.sum()/number_of_frames;
+            mean_position_y = position_y.sum()/number_of_frames;
+            mean_position_z = position_z.sum()/number_of_frames;
+
+            mean_velocity_x = velocity_x.sum()/number_of_frames;
+            mean_velocity_y = velocity_y.sum()/number_of_frames;
+            mean_velocity_z = velocity_z.sum()/number_of_frames;
+
 
         }
 
