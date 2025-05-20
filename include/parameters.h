@@ -32,7 +32,7 @@ namespace mdtools {
 
     /// Defines an enumerator for the tasks
     enum class task_t : int {
-        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram, PairDistributionHistogram
+        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram, PairDistributionHistogram, RadiusOfGyration
     };
 
     /// Map a string argument to a task enumerator.
@@ -40,7 +40,8 @@ namespace mdtools {
             {"PhononDOS",     task_t::PhononDOS},
             {"DynamicStructureFactor", task_t::DynamicStructureFactor},
             {"AxialDistributionHistogram", task_t::AxialDistributionHistogram},
-            {"PairDistributionHistogram", task_t::PairDistributionHistogram}
+            {"PairDistributionHistogram", task_t::PairDistributionHistogram},
+            {"RadiusOfGyration", task_t::RadiusOfGyration}
     };
 
     /// Defines an enumerator for the axis
@@ -73,21 +74,39 @@ namespace mdtools {
 
     struct simulation_options_t {
 
+        std::vector<double> atom_mass;
+        std::map<int,double> mass_map;
         double time_step=0;
         int start_iteration =0;
+        int delta_iteration = 1;
         int end_iteration = -1;
 
         void validate() {
             if (time_step <= 0) {
-                std::throw_with_nested(
-                        std::runtime_error("Negative or zero time_step"));
+                std::throw_with_nested(std::runtime_error("Negative or zero time_step"));
             }
             if (start_iteration < 0) {
-                std::throw_with_nested(
-                        std::runtime_error("Negative or zero start iteration"));
+                std::throw_with_nested(std::runtime_error("Negative or zero start iteration"));
+            }
+
+            if (delta_iteration < 0) {
+                std::throw_with_nested(std::runtime_error("Negative or zero delta iteration"));
             }
 
             if (end_iteration <= start_iteration){end_iteration = -1;}
+
+            if(atom_mass.empty()){
+                std::throw_with_nested(std::runtime_error("Empty mass map"));
+
+            }
+            int key=1;
+            for(auto &item : atom_mass){
+                if(item <=0){
+                    std::throw_with_nested(std::runtime_error("Mass map has zero or negative values"));
+                }
+                mass_map[key++]=item;
+            }
+
 
         }
     };
@@ -174,6 +193,12 @@ namespace mdtools {
             }
 
         }
+
+    };
+
+    struct radius_of_gyration_options_t {
+        bool mass_weighted = true;
+        std::string atom_type_mass_json;
 
     };
 

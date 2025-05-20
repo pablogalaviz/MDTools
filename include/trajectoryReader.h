@@ -255,18 +255,18 @@ namespace mdtools {
         static std::string removeNumbers(const std::string& input);
         std::vector<int> getAtomTypeFromGro();
 
-        std::vector<atom_t> (trajectoryReader::*getTrajectory)(double time_step, int start_iteration, int end_iteration);
-        std::vector<atom_t> getLammpsTrajectory(double time_step, int start_iteration, int end_iteration);
-        std::vector<atom_t> getXDATCARTrajectory(double time_step, int start_iteration, int end_iteration);
-        std::vector<atom_t> getXTCTrajectory(double time_step, int start_iteration, int end_iteration);
-        std::vector<atom_t> getTRRTrajectory(double time_step, int start_iteration, int end_iteration);
+        std::vector<atom_t> (trajectoryReader::*getTrajectory)(double time_step, int start_iteration, int delta_iteration ,int end_iteration);
+        std::vector<atom_t> getLammpsTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration);
+        std::vector<atom_t> getXDATCARTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration);
+        std::vector<atom_t> getXTCTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration);
+        std::vector<atom_t> getTRRTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration);
 
     public:
         explicit trajectoryReader(const std::string& file_name,const std::string& coordinates_file_name="");
 
         virtual ~trajectoryReader();
 
-        inline std::vector<atom_t> get(double time_step, int start_iteration, int end_iteration) {return (this->*getTrajectory)(time_step,start_iteration,end_iteration);}
+        inline std::vector<atom_t> get(double time_step, int start_iteration, int delta_iteration, int end_iteration) {return (this->*getTrajectory)(time_step,start_iteration,delta_iteration,end_iteration);}
 
     };
 

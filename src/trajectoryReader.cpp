@@ -80,7 +80,7 @@ namespace mdtools {
 
     }
 
-    std::vector<atom_t> trajectoryReader::getLammpsTrajectory(double time_step, int start_iteration, int end_iteration) {
+    std::vector<atom_t> trajectoryReader::getLammpsTrajectory(double time_step, int start_iteration,int delta_iteration ,int end_iteration) {
 
         std::string line;
 
@@ -98,7 +98,7 @@ namespace mdtools {
                 boost::algorithm::split(fields, line, boost::is_any_of(":"));
                 if (fields[1].find("TIMESTEP") != std::string::npos) {
                     frame_count++;
-                    if(frame_count <= start_iteration){
+                    if(frame_count <= start_iteration || frame_count%delta_iteration !=0 ){
                         current_state = SKIP_FRAME;
                     }
                     else
@@ -161,8 +161,8 @@ namespace mdtools {
                 }
                 if (current_state == READING_BOX) {
                     char *pEnd;
-                    new_frame.lattice[box_coordinate].minimum = strtod(line.c_str(), &pEnd);
-                    new_frame.lattice[box_coordinate].maximum = strtod(pEnd, NULL);
+                    new_frame.lattice[box_coordinate].minimum = strtod(line.c_str(), &pEnd)/10;
+                    new_frame.lattice[box_coordinate].maximum = strtod(pEnd, NULL)/10;
                     box_coordinate = (box_coordinate + 1) % 3;
                     continue;
                 }
@@ -221,11 +221,11 @@ namespace mdtools {
 
     }
 
-    std::vector<atom_t> trajectoryReader::getXDATCARTrajectory(double time_step, int start_iteration, int end_iteration) {
+    std::vector<atom_t> trajectoryReader::getXDATCARTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration) {
         return std::vector<atom_t>();
     }
 
-    std::vector<atom_t> trajectoryReader::getXTCTrajectory(double time_step, int start_iteration, int end_iteration) {
+    std::vector<atom_t> trajectoryReader::getXTCTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration) {
         return std::vector<atom_t>();
     }
 
@@ -240,7 +240,7 @@ namespace mdtools {
         std::vector<int> result;
         std::string line;
         int count=0;
-        int atom_id=0;
+        int atom_id=1;
         unsigned long number_of_atoms=0;
         std::map<std::string , int> map_atom_id;
         while (std::getline(*input_stream, line)) {
@@ -269,7 +269,7 @@ namespace mdtools {
         }
 
 
-    std::vector<atom_t> trajectoryReader::getTRRTrajectory(double time_step, int start_iteration, int end_iteration) {
+    std::vector<atom_t> trajectoryReader::getTRRTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration) {
 
          std::vector<int> atom_type = getAtomTypeFromGro();
 
@@ -288,7 +288,7 @@ namespace mdtools {
             exit(-1);
         }
 
-        if (number_of_frames < end_iteration) {
+        if (end_iteration > 0 && number_of_frames < end_iteration) {
             LOGGER.warning << "Number of frames is smaller than simulation.end_iteration"<< std::endl;
         }
 
@@ -330,7 +330,7 @@ namespace mdtools {
                                   reinterpret_cast<rvec*>(coordinates.data()),  // coords array
                                   reinterpret_cast<rvec*>(velocity.data()),    // velocities array
                                   nullptr, &flag)) == exdrOK and frame_id < end_iteration) {
-            if(frame_id >= start_iteration){
+            if(frame_id >= start_iteration && frame_id%delta_iteration == 0){
                 for(int atom_id=0; atom_id < number_of_atoms; atom_id++){
                     atom_trajectory[atom_id].position_x[frame_id-start_iteration]=coordinates[3 * atom_id];
                     atom_trajectory[atom_id].position_y[frame_id-start_iteration]=coordinates[3 * atom_id + 1];
@@ -344,7 +344,7 @@ namespace mdtools {
                     atom_trajectory[atom_id].lattice_a[frame_id-start_iteration]=box[0][0];
                     atom_trajectory[atom_id].lattice_b[frame_id-start_iteration]=box[1][1];
                     atom_trajectory[atom_id].lattice_c[frame_id-start_iteration]=box[2][2];
-                    atom_trajectory[atom_id].time=time;
+                    atom_trajectory[atom_id].time[frame_id-start_iteration]=step*time_step;
                     atom_trajectory[atom_id].atom_type=atom_type[atom_id];
                 }
             }

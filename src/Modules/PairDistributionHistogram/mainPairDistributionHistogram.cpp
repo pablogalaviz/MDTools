@@ -25,12 +25,15 @@
 
 namespace mdtools {
 
-    void mainPairDistributionHistogram(const pair_distribution_histogram_options_t& pair_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options){
+    void mainPairDistributionHistogram(const pair_distribution_histogram_options_t &pair_distribution_histogram,
+                                       const io_options_t &io_options, simulation_options_t simulation_options) {
 
-        auto trajectory = trajectoryReader(io_options.trajectory_input_file,io_options.coordinates_input_file).get(simulation_options.time_step, simulation_options.start_iteration, simulation_options.end_iteration);
+        auto trajectory = trajectoryReader(io_options.trajectory_input_file, io_options.coordinates_input_file).get(
+                simulation_options.time_step, simulation_options.start_iteration, simulation_options.delta_iteration,
+                simulation_options.end_iteration);
 
-        if(trajectory.empty()){
-            LOGGER.error << "PairDistributionHistogram failed"<< std::endl;
+        if (trajectory.empty()) {
+            LOGGER.error << "PairDistributionHistogram failed" << std::endl;
             return;
         }
 
@@ -74,7 +77,7 @@ namespace mdtools {
             }
         }
 
-        for(auto item : histograms) {
+        for (auto item: histograms) {
             std::ofstream file;
             file.open(io_options.output_path + "/hist_" + std::to_string(item.first) + ".csv", std::ios_base::out);
             for (auto &&x: indexed(item.second, boost::histogram::coverage::all)) {

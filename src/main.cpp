@@ -21,6 +21,7 @@
 #include "Modules/PhononDOS/mainPhononDOS.h"
 #include "Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h"
 #include "Modules/PairDistributionHistogram/mainPairDistributionHistogram.h"
+#include "Modules/RadiusOfGyration/mainRadiusOfGyration.h"
 
 int main(const int ac, char *av[]) {
 
@@ -62,8 +63,10 @@ int main(const int ac, char *av[]) {
         mdtools::simulation_options_t simulation_options;
         boost::program_options::options_description simulationOptions("Simulation Options");
         simulationOptions.add_options()
+                ("simulation.atom_mass",boost::program_options::value<std::vector<double> >(&simulation_options.atom_mass)->multitoken(), "Define mass for each atom species.")
                 ("simulation.time_step",boost::program_options::value<double>(&simulation_options.time_step)->default_value(1), "Simulation time step in fs")
                 ("simulation.start_iteration",boost::program_options::value<int>(&simulation_options.start_iteration)->default_value(0), "Read from start iteration")
+                ("simulation.delta_iteration",boost::program_options::value<int>(&simulation_options.delta_iteration)->default_value(1), "Read every delta iterations")
                 ("simulation.end_iteration",boost::program_options::value<int>(&simulation_options.end_iteration)->default_value(0), "Read until end iteration. If end_iteration <= start_iteration read all.");
 
 
@@ -100,6 +103,14 @@ int main(const int ac, char *av[]) {
                  boost::program_options::value<double>(&pair_distribution_histogram.stop)->default_value(1), "Histogram stop from the axis")
                 ("pair_distribution_histogram.size",
                  boost::program_options::value<int>(&pair_distribution_histogram.size)->default_value(100), "Histogram number of bins");
+
+        mdtools::radius_of_gyration_options_t radius_of_gyration_options;
+        boost::program_options::options_description radiusOfGyrationOptions("Radius Of Gyration Options");
+        radiusOfGyrationOptions.add_options()
+                ("radius_of_gyration.mass_weighted",
+                 boost::program_options::value<bool>(&radius_of_gyration_options.mass_weighted)->default_value(true), "Set true to calculate the radius of gyration, or false to calculate the moment of inertia")
+                 ("radius_of_gyration.atom_type_mass_json",
+                boost::program_options::value<std::string>(&radius_of_gyration_options.atom_type_mass_json)->default_value(""), "Set a json map of type and mass");
 
         boost::program_options::positional_options_description positional;
         positional.add("task", 1);
@@ -182,6 +193,10 @@ int main(const int ac, char *av[]) {
             case mdtools::task_t::PairDistributionHistogram :
                 pair_distribution_histogram.validate();
                 mdtools::mainPairDistributionHistogram(pair_distribution_histogram,io_options,simulation_options);
+                break;
+
+            case mdtools::task_t::RadiusOfGyration:
+                mdtools::mainRadiusOfGyration(radius_of_gyration_options,io_options,simulation_options);
                 break;
             default:
                 mdtools::LOGGER.error << "Unknown task: " << task << std::endl;

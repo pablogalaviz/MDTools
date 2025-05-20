@@ -25,6 +25,24 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost COMPONENTS program_options iostreams filesystem system date_time REQUIRED)
 
+include(FetchContent)
+FetchContent_Declare(
+        Boost
+        URL https://archives.boost.io/release/1.71.0/source/boost_1_71_0.tar.gz
+)
+
+FetchContent_GetProperties(Boost)
+if (NOT boost_POPULATED)
+    FetchContent_MakeAvailable(Boost)
+    set(Boost_INCLUDE_DIRS ${boost_SOURCE_DIR})
+endif ()
+
+# The following lines are to use Boost in your project
+include_directories(${Boost_INCLUDE_DIRS})
+add_definitions(-DBOOST_LOG_DYN_LINK)
+
+# List your libraries
+# find_package(Boost COMPONENTS ... )
 #-- GSL library setup
 find_package(GSL REQUIRED)
 include_directories("${GSL_INCLUDE_DIRS}")
@@ -55,6 +73,8 @@ add_executable(MDTools src/main.cpp
         src/xdrfile/xdrfile.c
         src/xdrfile/xdrfile_trr.c
         src/xdrfile/xdrfile_xtc.c
+        src/Modules/RadiusOfGyration/mainRadiusOfGyration.cpp
+        src/Modules/RadiusOfGyration/mainRadiusOfGyration.h
 )
 
 target_link_libraries(MDTools PUBLIC

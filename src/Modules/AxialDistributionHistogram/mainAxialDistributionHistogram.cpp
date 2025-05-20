@@ -25,38 +25,44 @@
 
 namespace mdtools {
 
-    void mainAxialDistributionHistogram(const axial_distribution_histogram_options_t& axial_distribution_histogram,const io_options_t& io_options, simulation_options_t simulation_options){
+    void mainAxialDistributionHistogram(const axial_distribution_histogram_options_t &axial_distribution_histogram,
+                                        const io_options_t &io_options, simulation_options_t simulation_options) {
 
-        auto trajectory = trajectoryReader(io_options.trajectory_input_file,io_options.coordinates_input_file).get(simulation_options.time_step, simulation_options.start_iteration, simulation_options.end_iteration);
+        auto trajectory = trajectoryReader(io_options.trajectory_input_file, io_options.coordinates_input_file).get(
+                simulation_options.time_step, simulation_options.start_iteration, simulation_options.delta_iteration,
+                simulation_options.end_iteration);
 
-        if(trajectory.empty()){
-            LOGGER.error << "AxialDistributionHistogram failed"<< std::endl;
+        if (trajectory.empty()) {
+            LOGGER.error << "AxialDistributionHistogram failed" << std::endl;
             return;
         }
 
         auto n = trajectory[0].position_x.size();
-        LOGGER.info << "Reading done. Number of frames: "<< n << std::endl;
+        LOGGER.info << "Reading done. Number of frames: " << n << std::endl;
 
         std::map<int, boost::histogram::histogram<std::tuple<boost::histogram::axis::regular<double>>>> histograms{};
 
         auto axis = str2axis[axial_distribution_histogram.axis];
         for (auto &atom: trajectory) {
-            if(histograms.find(atom.atom_type) == histograms.end()){
-                histograms[atom.atom_type]=boost::histogram::make_histogram(boost::histogram::axis::regular<>(axial_distribution_histogram.size, axial_distribution_histogram.start, axial_distribution_histogram.stop, "r"));
+            if (histograms.find(atom.atom_type) == histograms.end()) {
+                histograms[atom.atom_type] = boost::histogram::make_histogram(
+                        boost::histogram::axis::regular<>(axial_distribution_histogram.size,
+                                                          axial_distribution_histogram.start,
+                                                          axial_distribution_histogram.stop, "r"));
             }
             for (int i = 0; i < n; i++) {
-                auto cx = 0.5*(atom.lattice_origin_x[i] + atom.lattice_a[i]);
-                auto cy = 0.5*(atom.lattice_origin_y[i] + atom.lattice_b[i]);
-                auto cz = 0.5*(atom.lattice_origin_z[i] + atom.lattice_c[i]);
+                auto cx = 0.5 * (atom.lattice_origin_x[i] + atom.lattice_a[i]);
+                auto cy = 0.5 * (atom.lattice_origin_y[i] + atom.lattice_b[i]);
+                auto cz = 0.5 * (atom.lattice_origin_z[i] + atom.lattice_c[i]);
                 auto x = axis == axis_t::X ? 0 : atom.position_x[i] - cx;
                 auto y = axis == axis_t::Y ? 0 : atom.position_y[i] - cy;
                 auto z = axis == axis_t::Z ? 0 : atom.position_z[i] - cz;
-                auto r = sqrt(x*x+y*y+z*z);
+                auto r = sqrt(x * x + y * y + z * z);
                 histograms[atom.atom_type](r);
             }
         }
 
-        for(auto item : histograms) {
+        for (auto item: histograms) {
             std::ofstream file;
             file.open(io_options.output_path + "/hist_" + std::to_string(item.first) + ".csv", std::ios_base::out);
             for (auto &&x: indexed(item.second, boost::histogram::coverage::all)) {
