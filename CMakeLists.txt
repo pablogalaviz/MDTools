@@ -75,6 +75,8 @@ add_executable(MDTools src/main.cpp
         src/xdrfile/xdrfile_xtc.c
         src/Modules/RadiusOfGyration/mainRadiusOfGyration.cpp
         src/Modules/RadiusOfGyration/mainRadiusOfGyration.h
+        src/Modules/RadialDistributionHistogram/mainRadialDistributionHistogram.cpp
+        src/Modules/RadialDistributionHistogram/mainRadialDistributionHistogram.h
 )
 
 target_link_libraries(MDTools PUBLIC

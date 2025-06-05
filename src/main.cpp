@@ -20,6 +20,7 @@
 #include "Modules/DynamicStructureFactor/mainDynamicStructureFactor.h"
 #include "Modules/PhononDOS/mainPhononDOS.h"
 #include "Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h"
+#include "Modules/RadialDistributionHistogram/mainRadialDistributionHistogram.h"
 #include "Modules/PairDistributionHistogram/mainPairDistributionHistogram.h"
 #include "Modules/RadiusOfGyration/mainRadiusOfGyration.h"
 
@@ -94,6 +95,19 @@ int main(const int ac, char *av[]) {
                 ("axial_distribution_histogram.size",
                  boost::program_options::value<int>(&axial_distribution_histogram.size)->default_value(100), "Histogram number of bins");
 
+        mdtools::radial_distribution_histogram_options_t radial_distribution_histogram;
+        boost::program_options::options_description radialDistributionHistogramOptions("Radial Distribution Histogram Options");
+        radialDistributionHistogramOptions.add_options()
+                ("radial_distribution_histogram.center",
+                 boost::program_options::value<std::string>(&radial_distribution_histogram.center)->default_value("CM"), "select the center. Possible options [CM,center of mass,ORIGIN,origin]")
+                ("radial_distribution_histogram.start",
+                 boost::program_options::value<double>(&radial_distribution_histogram.start)->default_value(0), "Histogram start from the axis")
+                ("radial_distribution_histogram.stop",
+                 boost::program_options::value<double>(&radial_distribution_histogram.stop)->default_value(1), "Histogram stop from the axis")
+                ("radial_distribution_histogram.size",
+                 boost::program_options::value<int>(&radial_distribution_histogram.size)->default_value(100), "Histogram number of bins");
+
+
         mdtools::pair_distribution_histogram_options_t pair_distribution_histogram;
         boost::program_options::options_description pairDistributionHistogramOptions("Pair Distribution Histogram Options");
         pairDistributionHistogramOptions.add_options()
@@ -122,6 +136,7 @@ int main(const int ac, char *av[]) {
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
                 .add(axialDistributionHistogramOptions)
+                .add(radialDistributionHistogramOptions)
                 .add(pairDistributionHistogramOptions)
                 ;
 
@@ -131,6 +146,7 @@ int main(const int ac, char *av[]) {
                 .add(phononDOSOptions)
                 .add(dynamicStructureFactorOptions)
                 .add(axialDistributionHistogramOptions)
+                .add(radialDistributionHistogramOptions)
                 .add(pairDistributionHistogramOptions)
                 ;
 
@@ -189,6 +205,10 @@ int main(const int ac, char *av[]) {
             case mdtools::task_t::AxialDistributionHistogram :
                 axial_distribution_histogram.validate();
                 mdtools::mainAxialDistributionHistogram(axial_distribution_histogram,io_options,simulation_options);
+                break;
+            case mdtools::task_t::RadialDistributionHistogram :
+                radial_distribution_histogram.validate();
+                mdtools::mainRadialDistributionHistogram(radial_distribution_histogram,io_options,simulation_options);
                 break;
             case mdtools::task_t::PairDistributionHistogram :
                 pair_distribution_histogram.validate();

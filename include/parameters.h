@@ -32,7 +32,7 @@ namespace mdtools {
 
     /// Defines an enumerator for the tasks
     enum class task_t : int {
-        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram, PairDistributionHistogram, RadiusOfGyration
+        PhononDOS = 1, DynamicStructureFactor, AxialDistributionHistogram,RadialDistributionHistogram, PairDistributionHistogram, RadiusOfGyration
     };
 
     /// Map a string argument to a task enumerator.
@@ -40,6 +40,7 @@ namespace mdtools {
             {"PhononDOS",     task_t::PhononDOS},
             {"DynamicStructureFactor", task_t::DynamicStructureFactor},
             {"AxialDistributionHistogram", task_t::AxialDistributionHistogram},
+            {"RadialDistributionHistogram", task_t::RadialDistributionHistogram},
             {"PairDistributionHistogram", task_t::PairDistributionHistogram},
             {"RadiusOfGyration", task_t::RadiusOfGyration}
     };
@@ -58,6 +59,20 @@ namespace mdtools {
             {"Z", axis_t::Z},
             {"z", axis_t::Z},
     };
+
+    enum class center_t : int {
+        CM = 0, ORIGIN
+    };
+
+
+    /// Map a string argument to a task enumerator.
+    __attribute__((unused)) static std::map<std::string, center_t> str2center{
+            {"CM",     center_t::CM},
+            {"center of mass", center_t::CM},
+            {"ORIGIN",     center_t::ORIGIN},
+            {"origin", center_t::ORIGIN}
+    };
+
 
     struct io_options_t {
 
@@ -101,7 +116,7 @@ namespace mdtools {
             }
             int key=1;
             for(auto &item : atom_mass){
-                if(item <=0){
+                if(item <0){
                     std::throw_with_nested(std::runtime_error("Mass map has zero or negative values"));
                 }
                 mass_map[key++]=item;
@@ -154,7 +169,7 @@ namespace mdtools {
 
             if (str2axis.find(axis) == str2axis.end()) {
                 std::throw_with_nested(
-                        std::runtime_error("axial_distribution_histogram.axis should be 0,1 or 2"));
+                        std::runtime_error("axial_distribution_histogram.axis should be one of [x,X,y,Y,z,Z]"));
             }
             if (start < 0) {
                 std::throw_with_nested(std::runtime_error("axial_distribution_histogram.start should be zero or positive number"));
@@ -171,6 +186,38 @@ namespace mdtools {
         }
 
     };
+
+
+    struct radial_distribution_histogram_options_t {
+
+        std::string center="CM";
+        double start=0;
+        double stop=1;
+        int size=100;
+
+        void validate() const {
+
+            if (str2center.find(center) == str2center.end()) {
+                std::throw_with_nested(
+                        std::runtime_error("radial_distribution_histogram.center should be one of [CM,center of mass,ORIGIN,origin]"));
+            }
+
+            if (start < 0) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.start should be zero or positive number"));
+            }
+
+            if (stop < start) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.stop should be larger than start"));
+            }
+
+            if (size < 2) {
+                std::throw_with_nested(std::runtime_error("axial_distribution_histogram.size should be larger than 2"));
+            }
+
+        }
+
+    };
+
 
     struct pair_distribution_histogram_options_t {
 

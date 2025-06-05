@@ -247,10 +247,12 @@ namespace mdtools {
             if(count ==0){ count++; continue;}
             if(count ==1){ number_of_atoms=stoi(line) ;count++; continue;}
             std::vector<std::string> fields;
-            boost::algorithm::split(fields, line, boost::is_space(), boost::token_compress_on);
-            if(fields.size() < 5){ continue;}
+            boost::algorithm::split(fields, boost::trim_copy(line), boost::is_space(), boost::token_compress_on);
+            if(fields.size() == 3){
+                continue;
+            }
 
-            std::string atom_key=removeNumbers(line);
+            std::string atom_key=line.substr(9, 6);
             if(map_atom_id.find(atom_key) == map_atom_id.end()){
                 map_atom_id[atom_key]=atom_id;
                 atom_id++;
