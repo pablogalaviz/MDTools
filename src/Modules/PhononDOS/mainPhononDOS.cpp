@@ -32,7 +32,7 @@ namespace mdtools {
 
         LOGGER.info << "main Phonon DOS" << std::endl;
 
-        auto trajectory = trajectoryReader(io_options.trajectory_input_file).get(simulation_options.time_step,
+        auto trajectory = trajectoryReader(io_options.trajectory_input_file,io_options.coordinates_input_file).get(simulation_options.time_step,
                                                                                  simulation_options.start_iteration,
                                                                                  simulation_options.delta_iteration,
                                                                                  simulation_options.end_iteration);

@@ -262,7 +262,7 @@ namespace mdtools {
         std::vector<atom_t> getTRRTrajectory(double time_step, int start_iteration, int delta_iteration, int end_iteration);
 
     public:
-        explicit trajectoryReader(const std::string& file_name,const std::string& coordinates_file_name="");
+        explicit trajectoryReader(const std::string& file_name,const std::string& coordinates_file_name);
 
         virtual ~trajectoryReader();
 
