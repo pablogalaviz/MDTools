@@ -1,93 +1,94 @@
 cmake_minimum_required(VERSION 3.30)
-project(MDTools)
 
+project(MDTools
+        VERSION 1.0.0
+        DESCRIPTION "Molecular dynamics analysis tools"
+        LANGUAGES C CXX)
+
+#-------------------------------------------------------------------------------
+# Language / standard settings
+#-------------------------------------------------------------------------------
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+# Only meaningful for single-config generators; harmless otherwise.
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+            Debug Release RelWithDebInfo MinSizeRel)
+endif()
 
+#-------------------------------------------------------------------------------
+# Dependencies
+#-------------------------------------------------------------------------------
 find_package(OpenMP REQUIRED)
 
-if (OpenMP_CXX_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif ()
-if (OpenMP_C_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-endif ()
-
-include_directories("${PROJECT_SOURCE_DIR}/include")
-
-#-- Boost library setup
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost COMPONENTS program_options iostreams filesystem system date_time REQUIRED)
 
-include(FetchContent)
-FetchContent_Declare(
-        Boost
-        URL https://archives.boost.io/release/1.71.0/source/boost_1_71_0.tar.gz
+find_package(Boost 1.70 REQUIRED COMPONENTS
+        program_options
+        iostreams
+        filesystem
+        date_time
 )
 
-FetchContent_GetProperties(Boost)
-if (NOT boost_POPULATED)
-    FetchContent_MakeAvailable(Boost)
-    set(Boost_INCLUDE_DIRS ${boost_SOURCE_DIR})
-endif ()
-
-# The following lines are to use Boost in your project
-include_directories(${Boost_INCLUDE_DIRS})
-add_definitions(-DBOOST_LOG_DYN_LINK)
-
-# List your libraries
-# find_package(Boost COMPONENTS ... )
-#-- GSL library setup
 find_package(GSL REQUIRED)
-include_directories("${GSL_INCLUDE_DIRS}")
 
 find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
+pkg_check_modules(FFTW REQUIRED IMPORTED_TARGET fftw3)
 
-add_executable(MDTools src/main.cpp
-        include/xdrfile/xdrfile.h
-        include/xdrfile/xdrfile_trr.h
-        include/xdrfile/xdrfile_xtc.h
-        include/logger.h
-        include/parameters.h
-        include/io.h
-        include/trajectoryReader.h
+#-------------------------------------------------------------------------------
+# Target
+#-------------------------------------------------------------------------------
+add_executable(MDTools
+        src/main.cpp
         src/io.cpp
-        src/Modules/PhononDOS/mainPhononDOS.cpp
-        src/Modules/PhononDOS/mainPhononDOS.h
-        src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.cpp
-        src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.h
         src/trajectoryReader.cpp
-        src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.cpp
-        src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.h
-        src/Modules/PairDistributionHistogram/mainPairDistributionHistogram.cpp
-        src/Modules/PairDistributionHistogram/mainPairDistributionHistogram.h
+        # xdrfile (C sources)
         src/xdrfile/xdrfile.c
         src/xdrfile/xdrfile_trr.c
         src/xdrfile/xdrfile_xtc.c
+        # Modules
+        src/Modules/PhononDOS/mainPhononDOS.cpp
+        src/Modules/DynamicStructureFactor/mainDynamicStructureFactor.cpp
+        src/Modules/AxialDistributionHistogram/mainAxialDistributionHistogram.cpp
+        src/Modules/PairDistributionHistogram/mainPairDistributionHistogram.cpp
         src/Modules/RadiusOfGyration/mainRadiusOfGyration.cpp
-        src/Modules/RadiusOfGyration/mainRadiusOfGyration.h
         src/Modules/RadialDistributionHistogram/mainRadialDistributionHistogram.cpp
-        src/Modules/RadialDistributionHistogram/mainRadialDistributionHistogram.h
 )
 
-target_link_libraries(MDTools PUBLIC
-        Boost::boost
+# Public headers live here (propagated to consumers, not just globally).
+target_include_directories(MDTools
+        PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+)
+
+#-------------------------------------------------------------------------------
+# Link libraries (imported targets propagate includes, flags, and libs)
+#-------------------------------------------------------------------------------
+target_link_libraries(MDTools
+        PRIVATE
         Boost::program_options
         Boost::iostreams
         Boost::filesystem
         Boost::date_time
         GSL::gsl
+        PkgConfig::FFTW
+        OpenMP::OpenMP_CXX
 )
 
-if (OpenMP_CXX_FOUND OR OpenMP_C_FOUND)
-    target_link_libraries(MDTools PUBLIC OpenMP::OpenMP_CXX)
-endif ()
+#-------------------------------------------------------------------------------
+# Compiler flags (target-scoped, per-configuration where possible)
+#-------------------------------------------------------------------------------
+# Release optimization (generator-expression form keeps it per-config-safe).
+target_compile_options(MDTools PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:C,CXX>>:-O3>
+)
+
+# Debug: no optimization.
+target_compile_options(MDTools PRIVATE
+        $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:C,CXX>>:-O0>
+)

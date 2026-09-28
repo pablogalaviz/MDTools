@@ -9,16 +9,47 @@ git clone repository
 git clone git@github.com:pablogalaviz/MDTools.git
 cd MDTools
 ```
-Install dependencies and compile using cmake tools
-```shell
-mkdir build
-cd build
-cmake ..
-make 
-make install
+
+
+## Compilation & Installation
+
+### Requirements
+
+| Dependency | Minimum version | Purpose | Notes |
+|---|---|---|---|
+| CMake | 3.30 | Build system | `project(VERSION 3.30)` in `CMakeLists.txt` |
+| C/C++ compiler | C++17 | Build | GCC >= 9, Clang >= 10, or Apple Clang >= 12 |
+| Boost | 1.70 | `program_options`, `iostreams`, `filesystem`, `date_time` | Must be the **compiled** libraries, not headers-only |
+| GSL | 2.x | Numerics | GNU Scientific Library |
+| FFTW | 3.x | FFTs | Discovered via `pkg-config` (`fftw3`) |
+| OpenMP | - | Parallelism | Ships with most compilers |
+| pkg-config | - | FFTW discovery | Required, used by `pkg_check_modules` |
+
+> **Note on Boost:** the namespaced targets `Boost::program_options`, `Boost::iostreams`,
+> `Boost::filesystem`, and `Boost::date_time` are only created when the corresponding
+> `COMPONENTS` are requested. You must install the **binary/compiled** Boost development
+> packages (see below), not just the header-only package.
+
+---
+
+### Linux - Debian / Ubuntu
+
+```bash  
+sudo apt update  
+sudo apt install -y \
+    build-essential \
+    cmake \
+    pkg-config \
+    libboost-program-options-dev \
+    libboost-iostreams-dev \
+    libboost-filesystem-dev \
+    libboost-date-time-dev \
+    libgsl-dev \
+    libfftw3-dev \
+    libomp-dev  
+
 ```
 
-### Prerequisites
 
 C++17 compiler, [Boost libraries](https://www.boost.org/), [GSL - GNU Scientific Library](https://www.gnu.org/software/gsl/) and [FFTW3](https://fftw.org/).
 
