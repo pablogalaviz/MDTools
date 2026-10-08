@@ -92,3 +92,5 @@ target_compile_options(MDTools PRIVATE
 target_compile_options(MDTools PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:C,CXX>>:-O0>
 )
+
+install(TARGETS MDTools DESTINATION $ENV{HOME}/bin CONFIGURATIONS Release)
